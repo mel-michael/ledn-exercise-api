@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import express, { Request, Response, Application } from 'express';
+import cors from 'cors'
 import { MongoClient, Collection, Db } from 'mongodb';
 
 dotenv.config();
@@ -31,6 +32,8 @@ connectToDatabase();
 
 const app: Application = express();
 const PORT = process.env.PORT || 7000;
+
+app.use(cors())
 
 app.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
