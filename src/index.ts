@@ -38,40 +38,58 @@ const router = Router();
 app.use(cors());
 app.use(express.json());
 
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.post('/', async (req: Request, res: Response): Promise<void> => {
+  const { pageSize = 10 } = req.body;
+
   try {
-    const holders = await collections.accounts?.find({}).toArray();
-    res.status(200).send(holders);
+    const holders = (await collections.accounts?.find({}).limit(pageSize).toArray()) || [];
+    const lastDoc = holders[holders?.length - 1];
+    res.status(200).send({ accounts: holders, lastDocId: lastDoc && lastDoc['_id'] });
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
 
-router.post('/', async (req: Request, res: Response): Promise<void> => {
-  const { pageSize = 10, lastId, nextPage = true } = req.body;
-  let cursor;
-  let lastDoc;
+router.post('/next', async (req: Request, res: Response): Promise<void> => {
+  const { pageSize = 10, lastId } = req.body;
+
+  if (!lastId) {
+    res.status(400).send({ error: 'No last document Id provided' });
+  }
 
   try {
-    if (!lastId) {
-      cursor = await collections.accounts?.find({}).limit(pageSize);
-    }
+    const data =
+      (await collections.accounts
+        ?.find({ _id: { $gt: new ObjectId(lastId) } })
+        .limit(pageSize)
+        .toArray()) || [];
 
-    // handle next page query
-    if (lastId && nextPage) {
-      cursor = await collections.accounts?.find({ _id: { $gt: new ObjectId(lastId) } }).limit(pageSize);
-    }
-    // handle prev page query
-    if (lastId && !nextPage) {
-      cursor = await collections.accounts?.find({ _id: { $lt: new ObjectId(lastId) } }).limit(pageSize);
-    }
-
-    const data = (await cursor?.toArray()) || [];
-    lastDoc = nextPage ? data[data?.length - 1] : data[0];
+    const lastDoc = data[data?.length - 1];
 
     res.status(200).send({ accounts: data, lastDocId: lastDoc && lastDoc['_id'] });
   } catch (error) {
-    console.log(error.message);
+    res.status(500).send(error.message);
+  }
+});
+
+router.post('/prev', async (req: Request, res: Response): Promise<void> => {
+  const { pageSize = 10, lastId } = req.body;
+
+  if (!lastId) {
+    res.status(400).send({ error: 'No last document Id provided' });
+  }
+
+  try {
+    const data =
+      (await collections.accounts
+        ?.find({ _id: { $lt: new ObjectId(lastId) } })
+        .limit(pageSize)
+        .toArray()) || [];
+
+    const lastDoc = data[0];
+
+    res.status(200).send({ accounts: data, lastDocId: lastDoc && lastDoc['_id'] });
+  } catch (error) {
     res.status(500).send(error.message);
   }
 });
