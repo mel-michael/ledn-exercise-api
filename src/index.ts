@@ -39,12 +39,13 @@ app.use(cors());
 app.use(express.json());
 
 router.post('/', async (req: Request, res: Response): Promise<void> => {
-  const { pageSize = 10 } = req.body;
+  const { pageSize = 100 } = req.body;
 
   try {
+    const count = await collections.accounts?.countDocuments();
     const holders = (await collections.accounts?.find({}).limit(pageSize).toArray()) || [];
     const lastDoc = holders[holders?.length - 1];
-    res.status(200).send({ accounts: holders, lastDocId: lastDoc && lastDoc['_id'] });
+    res.status(200).send({ accounts: holders, lastDocId: lastDoc && lastDoc['_id'], count });
   } catch (error) {
     res.status(500).send(error.message);
   }
@@ -73,7 +74,7 @@ router.post('/next', async (req: Request, res: Response): Promise<void> => {
 });
 
 router.post('/prev', async (req: Request, res: Response): Promise<void> => {
-  const { pageSize = 10, lastId } = req.body;
+  const { pageSize = 100, lastId } = req.body;
 
   if (!lastId) {
     res.status(400).send({ error: 'No last document Id provided' });
@@ -86,6 +87,21 @@ router.post('/prev', async (req: Request, res: Response): Promise<void> => {
         .limit(pageSize)
         .toArray()) || [];
 
+    const lastDoc = data[0];
+
+    res.status(200).send({ accounts: data, lastDocId: lastDoc && lastDoc['_id'] });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
+router.post('/filter', async (req: Request, res: Response): Promise<void> => {
+  const { pageSize = 100, option } = req.body;
+
+  const query = { $or: [{ Country: option }, { mfa: option }] };
+
+  try {
+    const data = (await collections.accounts?.find(query).limit(pageSize).toArray()) || [];
     const lastDoc = data[0];
 
     res.status(200).send({ accounts: data, lastDocId: lastDoc && lastDoc['_id'] });
