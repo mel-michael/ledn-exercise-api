@@ -96,9 +96,8 @@ router.post('/prev', async (req: Request, res: Response): Promise<void> => {
 });
 
 router.post('/filter', async (req: Request, res: Response): Promise<void> => {
-  const { pageSize = 100, option } = req.body;
-
-  const query = { $or: [{ Country: option }, { mfa: option }] };
+  const { pageSize = 100, type, value } = req.body;
+  const query = { $or: [{ [type]: value }] };
 
   try {
     const data = (await collections.accounts?.find(query).limit(pageSize).toArray()) || [];
