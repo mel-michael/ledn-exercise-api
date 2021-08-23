@@ -7,7 +7,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "nodemon` ./src/index.ts"
+    "start": "nodemon ./src/index.ts"
   },
   "devDependencies": {
     "nodemon": "^2.0.12",
