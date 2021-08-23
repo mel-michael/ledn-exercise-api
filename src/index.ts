@@ -109,6 +109,21 @@ router.post('/filter', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.post('/search', async (req: Request, res: Response): Promise<void> => {
+  const { pageSize = 100, value } = req.body;
+  const searchRegex = new RegExp(value, 'i');
+  const query = { $or: [{ 'First Name': searchRegex }, { 'Last Name': searchRegex }] };
+
+  try {
+    const data = (await collections.accounts?.find(query).limit(pageSize).toArray()) || [];
+    const lastDoc = data[0];
+
+    res.status(200).send({ accounts: data, lastDocId: lastDoc && lastDoc['_id'] });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
 app.use('/', router);
 
 app.listen(PORT, (): void => {
