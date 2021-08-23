@@ -51,6 +51,15 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   }
 });
 
+router.get('/highest-token', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const holder = await collections.accounts?.find({}).sort({ amt: -1 }).limit(1).toArray();
+    res.status(200).send({ account: holder });
+  } catch (error) {
+    res.status(500).send(error.message);
+  }
+});
+
 router.post('/next', async (req: Request, res: Response): Promise<void> => {
   const { pageSize = 10, lastId } = req.body;
 
